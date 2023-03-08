@@ -18,6 +18,10 @@ Afterward, you need to replace the spread variable, <strong><i>1.05</i></strong>
 (A number that is less than the current dollar price of said asset).  I have it set to 1.05 (105%) in order to force the arbitrage function to execute during testing.
 </p>
 
+![image](https://user-images.githubusercontent.com/72562693/223864467-6840e485-ff97-48ac-ad19-be3b8294edc6.png)
+
+
+
 <h2>Running the Bot</h2>
 
 ```
