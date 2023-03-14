@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 reqwest = {version = "0.11.14", features = ["blocking", "json"]}
 tokio = { version = "1.15.0", features = ["full"] }
-tokio-tungstenite = "0.18.0"
+tungstenite = {version = "0.18.0", features = ["native-tls"]}
 serde = {version = "1.0.152", features = ["derive"]}
 serde_json = "1.0.93"
 serde_urlencoded = "0.7.1"
@@ -17,4 +17,3 @@ http = "0.2.9"
 hex = "0.4.2"
 sha2 = "0.10.6"
 futures = "0.3.26"
-websocket = "0.26.5"
