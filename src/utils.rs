@@ -41,3 +41,10 @@ pub fn get_float_precision(num: f32) -> i32 {
     }
     return counter;
 }
+
+pub fn get_input() -> String {
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    input = input.to_ascii_uppercase().trim().replace("\n", "");
+    return input;
+}

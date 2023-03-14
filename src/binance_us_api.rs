@@ -18,7 +18,6 @@ use crate::utils;
 
 
 pub const API_URL: &str = "https://api.binance.us";
-//Replace the strings below with your personal api key and secret
 pub const API_KEY: &str = "REDACTED";
 pub const SECRET: &str = "REDACTED";
 
@@ -184,7 +183,7 @@ pub async fn constraints_check(coin1: &str, coin2: &str) -> [f32; 7] {
 }
 
 
-pub async fn arbitrage(coin: &str, pairs: &[&str], spread: f32) {
+pub async fn arbitrage(coin: &str, pairs: Vec<String>, spread: f32) {
 
 
     let info = get_exchange_info(coin, "USDT").await;
@@ -192,7 +191,7 @@ pub async fn arbitrage(coin: &str, pairs: &[&str], spread: f32) {
     
     for pair in pairs.iter() {
         //get pricing data for the pair
-        let data: f32 = get_price(coin, pair).await;
+        let data: f32 = get_price("ADA", pair).await;
         //calculate the dollar value for the pair
         let dollarprice = get_price(pair, "USD").await;
         println!("{} {}({}USD)", data, pair, data*dollarprice);
@@ -238,7 +237,7 @@ pub async fn arbitrage(coin: &str, pairs: &[&str], spread: f32) {
             let fmt_price = utils::trim(data, baseAssetPrecision);
             println!("Formatted price = {}", fmt_price);
             //let fmt_data = utils::trim(data, baseAssetPrecision);
-            let fmt_qty = utils::trim(calc_min_qty*1.02, step_size_precision);
+            let fmt_qty = utils::trim(calc_min_qty*1.05, step_size_precision);
             
             place_order("ADA", pair, "BUY", fmt_qty, fmt_price).await;
 
