@@ -11,6 +11,7 @@ use futures::{future, pin_mut, StreamExt, FutureExt};
 
 use std::io::Read;
 use std::rc::Rc;
+use std::str::FromStr;
 use std::{time::SystemTime, time::UNIX_EPOCH, collections::HashMap, env};
 
 
@@ -29,53 +30,26 @@ mod strategies;
 ///////////MAIN PROGRAM////////////
 #[tokio::main]
 async fn main() {
-    let strategies: [&str; 1] = ["scheduled_arb"];
+    let strategies: [&str; 2] = ["scheduled_arb", "listen and react"];
+
+    let mut counter = 0;
 
     println!("Please select a strategy from the list: ");
     for strategy in strategies.iter() {
-        let mut counter: i32 = 0;
     println!("{} {}",counter, strategy);
         counter += 1;
     }
-    let resp = utils::get_input().parse::<i32>().unwrap();
-    println!("You have selected: {}",resp);
+    let resp = utils::get_input().parse::<usize>().unwrap();
+    println!("You have selected: {} {}",resp, strategies[resp]);
     match resp {
         0 => strategies::scheduled_arb().await,
+        1 => strategies::listen_and_react(),
         __=> println!("Please select a valid strategy"),
     }
-
 }
-    //Arbitrage function below for testing
-    //binance_us_api::arbitrage("ADA", &["BTC", "ETH", "USDC", "USDT"], 1.05  ).await;
-    //println!("Binance US API Arbitrage Test");
-
-
-    //Websocket Code....NOT WORKING YET
-    /*
-    let url = Url::parse("wss://binance.us:9443/ws/adabtc@bookTicker").unwrap();
-
-    let request = Client::connect(url).unwrap();
-
-    let response = request.send().unwrap();
-
-    response.validate().unwrap();
-
-    let mut client = response.begin();
-
-    let (mut sender, mut receiver) = client.split();
-
-    for message in receiver.incoming_messages() {
-        let message: Message = message.unwrap();
-        println!("Message: {:?}", message);
-    }
 
 
 
-    //let mut running = true;
 
-    //println!("Connected to socket");
-    */
-
-    
 ////////////////END MAIN////////////////////
 

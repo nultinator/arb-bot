@@ -1,5 +1,9 @@
+use std::str::FromStr;
+use reqwest::Url;
+
 use crate::binance_us_api;
 use crate::utils;
+use crate::utils::get_input;
 
 pub async fn scheduled_arb() {
     println!("Please add a base coin:");
@@ -41,5 +45,52 @@ pub async fn scheduled_arb() {
                 binance_us_api::arbitrage(&coin, pairs.to_owned(), spread).await;
                 std::thread::sleep(std::time::Duration::from_secs(schedule));
             }
+    }
+}
+
+
+pub fn listen_and_react() {
+    println!("Please choose a base coin");
+    let coin1 = get_input();
+    println!("Please choose a trading pair");
+    let coin2 = get_input();
+
+    let url = format!("wss://stream.binance.us:9443/ws/{}{}@bookTicker", coin1.to_ascii_lowercase(), coin2.to_ascii_lowercase());
+
+    let (mut socket, _response) = tungstenite::connect(Url::parse(&url)
+        .unwrap())
+        .expect("can't connect!");
+
+    println!("HTTP STATUS {}", _response.status());
+
+    let mut counter = 0;
+
+
+    loop {
+        let msg = 
+            socket.read_message().expect("error reading message");
+
+            let json = 
+                serde_json::Value::from_str(&msg.to_string()).expect("failed to parse message");
+            println!("Message # {:?}", counter);
+            counter += 1;
+            let ask_price = match json["a"].to_string().replace("\"", "").parse::<f32>() {
+                Ok(n) => n,
+                __=> continue 
+            };
+            let ask_qty = match json["A"].to_string().replace("\"", "").parse::<f32>() {
+                Ok(n) => n,
+                __=> continue
+            };
+            println!("Ask price/qty {:?}/{:?}", ask_price, ask_qty);
+            let bid_price = match json["b"].to_string().replace("\"", "").parse::<f32>() {
+                Ok(n) => n,
+                __ => continue
+            };
+            let bid_qty = match json["B"].to_string().replace("\"", "").parse::<f32>() {
+                Ok(n) => n,
+                __ => continue
+            };
+            println!("Bid price/qty {:?}/{:?}", bid_price, bid_qty);
     }
 }
