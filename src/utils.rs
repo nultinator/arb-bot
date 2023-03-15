@@ -27,16 +27,15 @@ pub fn trim(dec: f32, len: i32) -> f32 {
 pub fn get_float_precision(num: f32) -> i32 {
     let string_dec = num.to_string();
     let mut past_decimal = false;
-    let char_array = &string_dec.chars();
+    let char_array = string_dec.chars();
     let mut counter = 0;
     for c in char_array.clone().into_iter() {
         if past_decimal == false {
             if c == '.' {
                 past_decimal = true;
             }
-            if past_decimal {
-                counter += 1;
-            }
+        } else {
+            counter += 1;
         }
     }
     return counter;
@@ -45,6 +44,6 @@ pub fn get_float_precision(num: f32) -> i32 {
 pub fn get_input() -> String {
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
-    input = input.to_ascii_uppercase().trim().replace("\n", "");
+    input = input.trim().replace("\n", "");
     return input;
 }

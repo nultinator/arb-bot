@@ -1,11 +1,17 @@
+use std::fs::File;
+
 use reqwest::StatusCode;
 use reqwest;
 use reqwest::header::{HeaderName, HeaderMap, HeaderValue};
+
+use std::fs;
+use std::path::Path;
 use std::num::ParseFloatError;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{str::FromStr, ops::Deref, collections::HashMap};
-use std::io::{stdout, Write};
+use std::io::{stdout, Write, BufRead, BufReader, Error};
+
 use serde_json::{json, Value};
 use serde::{Deserialize, Serialize};
 use hmac::{Hmac, Mac};
@@ -15,12 +21,46 @@ type HmacSha256 = Hmac<Sha256>;
 
 use crate::utils;
 
-
-
 pub const API_URL: &str = "https://api.binance.us";
 pub const API_KEY: &str = "REDACTED";
 pub const SECRET: &str = "REDACTED";
 
+
+pub fn get_creds() {
+    let exists = Path::new(".config.json").exists();
+
+    if exists {
+        println!("config file found");
+
+        let contents = fs::read_to_string(".config.json")
+            .expect("could read config file");
+
+        let keys: Value = serde_json::from_str(&contents).unwrap();
+    
+
+        let api_key = keys["api_key"].to_string().replace("\"", "");
+        let secret =  keys["secret"].to_string().replace("\"", "");
+
+        println!("API_KEY: {:?}", api_key);
+        println!("SECRET: {:?}", secret);
+    } else {
+        println!("config not found");
+        let mut settings = File::create(".config.json").expect("couldn't create file");
+        println!("Please enter your api_key");
+        let api_key = utils::get_input();
+        println!("Please enter your secret");
+        let secret = utils::get_input();
+        println!("API KEY: {}", api_key);
+        println!("SECRET: {}", secret);
+        let json = serde_json::json!({
+            "api_key": api_key,
+            "secret": secret
+    });
+        println!("Writing to json file");
+        println!("{}", json);
+        write!(settings, "{}", json);
+    }
+}
 
 //Retrieve UNIX time from server
 pub async fn time() -> String {
@@ -191,15 +231,17 @@ pub async fn arbitrage(coin: &str, pairs: Vec<String>, spread: f32) {
     
     for pair in pairs.iter() {
         //get pricing data for the pair
-        let data: f32 = get_price("ADA", pair).await;
+        let data: f32 = get_price(coin, pair).await;
         //calculate the dollar value for the pair
         let dollarprice = get_price(pair, "USD").await;
+        println!("{} dollarprice: {}", pair, dollarprice);
         println!("{} {}({}USD)", data, pair, data*dollarprice);
         //add fee to the calculation below
-        
-        if dollarprice > data*dollarprice*spread {
-            println!("Arb detected, ADA/{}", pair);
-            let array = constraints_check("ADA", pair).await;
+
+        println!("Target buy: {}", data*dollarprice*spread);
+        if dollarprice*data < (data*dollarprice*spread) {
+            println!("Arb detected, {}/{}", coin, pair);
+            let array = constraints_check(coin, pair).await;
             let maxprice = array[0];
             let minprice = array[1];
             let min_notional = array[2];
@@ -237,9 +279,9 @@ pub async fn arbitrage(coin: &str, pairs: Vec<String>, spread: f32) {
             let fmt_price = utils::trim(data, baseAssetPrecision);
             println!("Formatted price = {}", fmt_price);
             //let fmt_data = utils::trim(data, baseAssetPrecision);
-            let fmt_qty = utils::trim(calc_min_qty*1.05, step_size_precision);
+            let fmt_qty = utils::trim(calc_min_qty*1.1, step_size_precision);
             
-            place_order("ADA", pair, "BUY", fmt_qty, fmt_price).await;
+            place_order(coin, pair, "BUY", fmt_qty, fmt_price).await;
 
 
             //let jsoninfo = binance_us_api::get_exchange_info("ADA", pair).await;
@@ -268,9 +310,10 @@ struct OrderResponse {
     transact_time: i64
 }
 
-async fn place_order(coin1: &str, coin2: &str, side: &str, quantity: f32, price: f32) {
+async fn place_order(coin1: &str, coin2: &str, side: &str, quantity: f32, price: f32,) {
     let api_key = API_KEY;
-    let secret_key = SECRET;
+    let secret = SECRET;
+
     let client = reqwest::Client::new();
 
     let order_request = OrderRequest {
@@ -305,7 +348,7 @@ async fn place_order(coin1: &str, coin2: &str, side: &str, quantity: f32, price:
 
     let query_string = serde_urlencoded::to_string(&query_params).unwrap();
 
-    let mut mac = HmacSha256::new_from_slice(secret_key.as_bytes()).unwrap();
+    let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
     mac.update(query_string.as_bytes());
     
     let signature = hex::encode(mac.finalize().into_bytes());
@@ -332,23 +375,58 @@ async fn place_order(coin1: &str, coin2: &str, side: &str, quantity: f32, price:
 
 }
 
-////////////////Functions that need further work////////////////////
-//get historical trades... NEEDS FURTHER TESTING, PANICKING 
-/*
-pub async fn get_historical_trades(coin1: &str, coin2: &str) -> String {
-    let url = format!("{}/api/v3/historicalTrades?symbol={}{}", API_URL, coin1, coin2);
-    println!("Fetching Historical Trades...trying {}", url);
-    let client = reqwest::Client::new();
+pub fn create_signature(secret: &str) -> String {
+    let secret_key = secret;
+
+    let timestamp = SystemTime::now()
+       .duration_since(UNIX_EPOCH)
+       .unwrap()
+       .as_millis();
+
+    let mut query_params = HashMap::new();
+        
+        query_params.insert("timestamp", timestamp.to_string());
+
+    let query_string = serde_urlencoded::to_string(&query_params).unwrap();
+
+    let mut mac = HmacSha256::new_from_slice(secret_key.as_bytes()).unwrap();
+    mac.update(query_string.as_bytes());
     
-    let result = client.get(&url)
-        .headers(construct_headers())
+    let signature = hex::encode(mac.finalize().into_bytes());
+
+    return signature;
+}
+
+
+
+//UNDER CONSTRUCTION
+/*
+pub async fn get_account_info() -> String {
+    let sig = create_signature();
+    let api_key = API_KEY;
+    let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+
+    
+    let url = format!("{}/api/v3/account/signature?{}", API_URL, sig);
+    println!("Trying url: {:?}", url);
+
+    let client = reqwest::Client::new();
+
+    let response = client
+        .request(reqwest::Method::POST, &url)
+        .header("X-MBX-APIKEY", api_key)
         .send()
         .await
-        .expect("Something happened")
+        .unwrap()
         .text()
         .await
         .unwrap();
-    let string = format!("{}", result);
-    return string;
+
+    let response = format!("Response {:?}", response.to_string());
+
+    return response;
 }
 */

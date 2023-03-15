@@ -8,12 +8,12 @@ use crate::utils::get_input;
 pub async fn scheduled_arb() {
     println!("Please add a base coin:");
 
-    let coin = utils::get_input();
+    let coin = utils::get_input().to_ascii_uppercase();
     println!("You entered: {:?}", coin);
 
     let mut pairs: Vec<String> = Vec::new();
     println!("Would you like to continue? (y/n):");
-    let mut resp = utils::get_input();
+    let mut resp = utils::get_input().to_ascii_uppercase();
     if resp.to_ascii_lowercase() == "n" {
         println!("Exiting program");
         }
@@ -26,7 +26,7 @@ pub async fn scheduled_arb() {
                 break;
             }
             println!("Please add a trading pair:");
-            let new_pair = utils::get_input();
+            let new_pair = utils::get_input().to_ascii_uppercase();
             pairs.push(new_pair.to_string());
             println!("Your current pairs are: {}", pairs.join(","));
         }
@@ -51,9 +51,9 @@ pub async fn scheduled_arb() {
 
 pub fn listen_and_react() {
     println!("Please choose a base coin");
-    let coin1 = get_input();
+    let coin1 = get_input().to_ascii_uppercase();
     println!("Please choose a trading pair");
-    let coin2 = get_input();
+    let coin2 = get_input().to_ascii_uppercase();
 
     let url = format!("wss://stream.binance.us:9443/ws/{}{}@bookTicker", coin1.to_ascii_lowercase(), coin2.to_ascii_lowercase());
 
