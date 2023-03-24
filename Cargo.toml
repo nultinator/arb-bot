@@ -8,7 +8,10 @@ edition = "2021"
 [dependencies]
 reqwest = {version = "0.11.14", features = ["blocking", "json"]}
 tokio = { version = "1.15.0", features = ["full"] }
+
 tungstenite = {version = "0.18.0", features = ["native-tls"]}
+tokio-tungstenite = "0.18.0"
+
 serde = {version = "1.0.152", features = ["derive"]}
 serde_json = "1.0.93"
 serde_urlencoded = "0.7.1"
@@ -18,3 +21,4 @@ hex = "0.4.2"
 sha2 = "0.10.6"
 futures = "0.3.26"
 same-file = "1.0.6"
+tokio-binance = "1.0.0"

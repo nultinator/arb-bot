@@ -1,14 +1,18 @@
 use binance_us_api::get_creds;
+use http::response;
 use reqwest::{Client, Method, Url};
 use reqwest;
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 
+use serde::de::IntoDeserializer;
 use serde_json::Value;
 use tokio::stream;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::watch::error;
 use tungstenite;
 use futures::{future, pin_mut, StreamExt, FutureExt};
+use tokio_binance::{Channel, AccountClient, BINANCE_US_URL,BINANCE_US_WSS_URL, ID, WebSocketStream, UserDataClient};
+
 
 
 use same_file::Handle;
@@ -28,7 +32,7 @@ use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
 
-
+mod account;
 mod utils;
 mod binance_us_api;
 mod strategies;
@@ -37,7 +41,6 @@ mod strategies;
 #[tokio::main]
 async fn main() {
     
-    /*
     binance_us_api::get_creds();
     
     let settings = fs::read_to_string(".config.json").unwrap();
@@ -45,10 +48,16 @@ async fn main() {
 
     let api_key = json["api_key"].to_string().replace("\"", "");
     let secret = json["secret"].to_string().replace("\"", "");
-    //let buffered = BufReader::new(file);
-    */
+
+
+
     
-    let strategies: [&str; 2] = ["scheduled_arb", "listen and react"];
+    let strategies: [&str; 5] = [
+        "scheduled_arb", 
+        "listen and react", 
+        "triangle arb(not yet working)",
+        "DCA (Dollar Cost Averaging)",
+         "quit"];
 
     let mut counter = 0;
 
@@ -60,16 +69,15 @@ async fn main() {
     let resp = utils::get_input().parse::<usize>().unwrap();
     println!("You have selected: {} {}",resp, strategies[resp]);
     match resp {
-        0 => strategies::scheduled_arb().await,
-        1 => strategies::listen_and_react(),
-        __=> println!("Please select a valid strategy"),
+        0 => strategies::scheduled_arb(&api_key, &secret).await,
+        1 => strategies::listen_and_react(&api_key, &secret).await,
+        2 => strategies::triangle_arb(&api_key, &secret).await,
+        3 => strategies::DCA(&api_key, &secret).await,
+        4 => strategies::terminate(),
+        __=> panic!("Please select a valid strategy"),
     }
-    
+
        
 }
 
-
-
-
-////////////////END MAIN////////////////////
 

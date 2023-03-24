@@ -22,9 +22,6 @@ type HmacSha256 = Hmac<Sha256>;
 use crate::utils;
 
 pub const API_URL: &str = "https://api.binance.us";
-pub const API_KEY: &str = "REDACTED";
-pub const SECRET: &str = "REDACTED";
-
 
 pub fn get_creds() {
     let exists = Path::new(".config.json").exists();
@@ -135,7 +132,7 @@ pub async fn get_candles(coin1: &str, coin2: &str) -> String {
 //get the price of coin1 denoted in coin2, example get_price("BTC", "USDT")
 pub async fn get_price(coin1: &str, coin2: &str) -> f32 {
     //println!("Fetching price for {} denoted in {}", coin1, coin2);
-    let url = format!("{}/api/v3/ticker/price?symbol={}{}", API_URL, coin1, coin2);
+    let url = format!("{}/api/v3/ticker/price?symbol={}{}", API_URL, coin1.to_ascii_uppercase(), coin2.to_ascii_uppercase());
     let result = reqwest::get(&url)
         .await
         .expect("Something happened")
@@ -223,10 +220,10 @@ pub async fn constraints_check(coin1: &str, coin2: &str) -> [f32; 7] {
 }
 
 
-pub async fn arbitrage(coin: &str, pairs: Vec<String>, spread: f32) {
+pub async fn arbitrage(api_key: &str, secret: &str, coin: &str, pairs: Vec<String>, spread: f32) {
 
 
-    let info = get_exchange_info(coin, "USDT").await;
+    //let info = get_exchange_info(coin, "USDT").await;
     
     
     for pair in pairs.iter() {
@@ -281,7 +278,11 @@ pub async fn arbitrage(coin: &str, pairs: Vec<String>, spread: f32) {
             //let fmt_data = utils::trim(data, baseAssetPrecision);
             let fmt_qty = utils::trim(calc_min_qty*1.1, step_size_precision);
             
-            place_order(coin, pair, "BUY", fmt_qty, fmt_price).await;
+            place_order(api_key, secret, coin, pair, "BUY", fmt_qty, fmt_price).await;
+
+            let price = utils::trim((data*dollarprice), 3);
+
+            place_order(api_key, secret, coin, "USDT", "SELL", fmt_qty, price).await;
 
 
             //let jsoninfo = binance_us_api::get_exchange_info("ADA", pair).await;
@@ -310,9 +311,9 @@ struct OrderResponse {
     transact_time: i64
 }
 
-async fn place_order(coin1: &str, coin2: &str, side: &str, quantity: f32, price: f32,) {
-    let api_key = API_KEY;
-    let secret = SECRET;
+pub async fn place_order(api_key: &str, secret: &str,coin1: &str, coin2: &str, side: &str, quantity: f32, price: f32,) {
+    let api_key = api_key;
+    let secret = secret;
 
     let client = reqwest::Client::new();
 
