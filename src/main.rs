@@ -52,7 +52,12 @@ async fn main() {
 
 
     
-    let strategies: [&str; 4] = ["scheduled_arb", "listen and react", "triangle arb(not yet working)", "quit"];
+    let strategies: [&str; 5] = [
+        "scheduled_arb", 
+        "listen and react", 
+        "triangle arb(not yet working)",
+        "DCA (Dollar Cost Averaging)",
+         "quit"];
 
     let mut counter = 0;
 
@@ -67,7 +72,8 @@ async fn main() {
         0 => strategies::scheduled_arb(&api_key, &secret).await,
         1 => strategies::listen_and_react(&api_key, &secret).await,
         2 => strategies::triangle_arb(&api_key, &secret).await,
-        3 => strategies::terminate(),
+        3 => strategies::DCA(&api_key, &secret).await,
+        4 => strategies::terminate(),
         __=> panic!("Please select a valid strategy"),
     }
 

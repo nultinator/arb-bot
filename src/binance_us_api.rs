@@ -311,7 +311,7 @@ struct OrderResponse {
     transact_time: i64
 }
 
-async fn place_order(api_key: &str, secret: &str,coin1: &str, coin2: &str, side: &str, quantity: f32, price: f32,) {
+pub async fn place_order(api_key: &str, secret: &str,coin1: &str, coin2: &str, side: &str, quantity: f32, price: f32,) {
     let api_key = api_key;
     let secret = secret;
 

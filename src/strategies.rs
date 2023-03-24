@@ -3,9 +3,12 @@ use futures::StreamExt;
 use reqwest::Url;
 use tokio::io::AsyncWriteExt;
 use tokio_binance::BINANCE_US_WSS_URL;
+use tokio_binance::types::OrderBookParams;
 
 use crate::account;
 use crate::binance_us_api;
+use crate::binance_us_api::constraints_check;
+use crate::binance_us_api::get_price;
 use crate::utils;
 use crate::utils::get_input;
 
@@ -177,6 +180,85 @@ pub async fn triangle_arb(api_key: &str, secret: &str) {
 
     let mut counter = 0;    
     };
+}
+
+pub async fn DCA(api_key: &str, secret: &str) {
+    println!("DCA Starting");
+    println!("What coin would you like to buy?");
+    let coin1 = get_input().to_ascii_uppercase();
+    println!("What coin would you like to buy with?");
+    let coin2 = get_input().to_ascii_uppercase();
+    println!("You are choosing to buy {} with {}", coin1, coin2);
+    println!("Please choose a schedule: min/hour/day/custom");
+
+    
+    let schedule = get_input().to_ascii_lowercase();
+    let mut seconds = 0;
+    if schedule == "min" {
+        seconds = 60;
+    } else if schedule == "hour" {
+        seconds = 3600;
+    } else if schedule == "day" {
+        seconds = 86400;
+    } else if schedule == "custom" {
+        println!("Please enter the time (in seconds) that you would like between each buy");
+        let input = get_input().parse::<i32>().expect("Please enter an integer");
+        seconds = input;
+    } else {
+        println!("Please select a valid schedule");
+        let input = get_input().parse::<i32>().expect("Please enter an integer");
+        seconds = input;
+    }
+
+    println!("We'll try a buy order every {} seconds", seconds);
+    println!("Checking constraints for {}/{}", coin1, coin2);
+    let array = constraints_check(&coin1, &coin2).await;
+
+
+            let mut running = false;
+
+            let maxprice = array[0];
+            let minprice = array[1];
+            let min_notional = array[2];
+            let multiplier_up = array[3];
+            let baseAssetPrecision: i32 = array[4] as i32;
+            let min_qty = array[5];
+            let step_size: f32 = array[6] as f32;
+
+            let data = binance_us_api::get_price(&coin1, &coin2).await;
+            println!("\n\n\n");
+            println!("CONSTRAINTS");
+            println!("Max Price: {}", maxprice);
+            println!("Min Price: {}", minprice);
+            println!("Min Notional: {}", min_notional);
+            println!("Base Asset Precision: {}", baseAssetPrecision);
+            println!("API Min Qty: {}", min_qty);
+            println!("Min_Qty * price: {}", min_qty*minprice);
+            println!("Multiplier_Up: {}", multiplier_up);
+            println!("Multiplier_Up * price: {}", multiplier_up*minprice);
+            println!("Stepsize: {}", step_size);
+
+            println!("\n\n\nPlease choose an order quantity larger than 'Calaculated minimum' listed below");
+            let data = get_price(&coin1, &coin2).await;
+            let precision = utils::get_float_precision(step_size);
+            let calc_minimum = utils::trim((min_notional / data), precision);
+
+
+            println!("Calculated min quantity: {}", calc_minimum);
+
+
+            let order_qty = get_input().parse::<f32>().expect("Please enter a valid quantity");
+            println!("We'll try to buy {} {} every {} seconds using {}", order_qty, coin1, seconds, coin2);
+
+            let running = true;
+
+
+            while running {
+                let price = get_price(&coin1, &coin2).await;
+                binance_us_api::place_order(api_key, secret, &coin1, &coin2, "BUY", order_qty, price).await;
+                std::thread::sleep(std::time::Duration::from_secs(seconds.try_into().unwrap()));
+            }
+
 }
 
 pub fn terminate() {
