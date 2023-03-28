@@ -8,11 +8,6 @@ First, you will need to have <strong>rust</strong> and <strong>cargo</strong> in
 git clone https://github.com/nultinator/arb-bot
 ```
 
-Next, in a code editor of your choice, change the following lines of <strong>"binance_us_api.rs"</strong>
-![image](https://user-images.githubusercontent.com/72562693/223858190-92aaff79-1846-4054-8966-c9b5c3026c4c.png)
-
-<p>
-After adding your keys, you'll be ready to run the bot.
 <strong>MAKE SURE YOU HAVE A BALANCE</strong>...example:<br>You are buying [some random coin] with BTC, you need to make sure you have enough BTC!!!
 </p>
 
@@ -32,6 +27,29 @@ Follow the prompts and walk feel free to walk away!
 
 ![Screenshot from 2023-03-14 11-31-07](https://user-images.githubusercontent.com/72562693/225053476-13afa5ba-25d0-4ed5-bb7f-bca631397c9d.png)
 
+<h2>Strategies</h2>
+  <h3>Scheduled Arb</h3>
+  <ol>
+    <li>Follow the prompts to enter your base coin and trading pairs
+    <li>Set a target spread and a schedule
+    <li>Runs an arbitrage function across all pairs at the schedule interval of your choosing
+  </ol>
+  <h3>Listen and React</h3>
+  <ol>
+    <li>Choose a trading pair to watch
+    <li>Stream the live orderbook
+  </ol>
+  <h3>Triangle Arb (Needs renaming: Takes an infinite amount of pairs)</h3>
+  <ol>
+    <li>Follow the prompts to enter a base coin and trading pairs
+    <li>Arbitrage across all of your pairs every time an order is posted in pair number 1
+  </ol>
+  <h3>DCA (Dollar Cost Averaging)</h3>
+  <ol>
+    <li>Select a coin to buy (example: BTC) and a coin to buy it with (example: USDT)
+    <li>Choose an amount to buy and a schedule
+    <li>Buy that amount at scheduled intervals
+  </ol>
 
 <h1>USE AT YOUR OWN RISK</h1>
 

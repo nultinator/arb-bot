@@ -222,9 +222,6 @@ pub async fn constraints_check(coin1: &str, coin2: &str) -> [f32; 7] {
 
 pub async fn arbitrage(api_key: &str, secret: &str, coin: &str, pairs: Vec<String>, spread: f32) {
 
-
-    //let info = get_exchange_info(coin, "USDT").await;
-    
     
     for pair in pairs.iter() {
         //get pricing data for the pair
@@ -284,8 +281,6 @@ pub async fn arbitrage(api_key: &str, secret: &str, coin: &str, pairs: Vec<Strin
 
             place_order(api_key, secret, coin, "USDT", "SELL", fmt_qty, price).await;
 
-
-            //let jsoninfo = binance_us_api::get_exchange_info("ADA", pair).await;
         } else {
             println!("Pair trading tight, no Arb detected");
         }

@@ -126,61 +126,72 @@ pub async fn triangle_arb(api_key: &str, secret: &str) {
     let mut pairs: Vec<String> = Vec::new();
 
     let mut running = false;
-      
 
+    println!("Please choose a base coin");
+    let coin = utils::get_input().to_ascii_lowercase();
+      
+    println!("Please enter a spread percentage");
+
+    let spread = utils::get_input().parse::<f32>().expect("Please enter a valid number");
     while running == false {
     
-    println!("Please choose a base coin");
-    let coin1 = get_input().to_ascii_uppercase();
-    println!("Please choose a trading pair");
-    let coin2 = get_input().to_ascii_uppercase();
-    let pair = format!("{}{}", coin1, coin2);
-    pairs.push(pair);
-    println!("Would you like to add another streaming pair?Y/n");
-    let resp = get_input();
-    if resp.to_ascii_lowercase() == "n" {
-        running = true;
-    }
-    }
-
-    
-    for pair in pairs {
-        while running {
-
-            let url = format!("wss://stream.binance.us:9443/ws/{}@bookTicker", pair.to_ascii_lowercase());
-
-            let coin1 =format!("{}{}{}", 
-            pair.to_string().chars().nth(0).unwrap(),
-            pair.to_string().chars().nth(1).unwrap(),
-            pair.to_string().chars().nth(2).unwrap()
-        );
-            let coin2 =format!("{}{}{}", 
-            pair.to_string().chars().nth(3).unwrap(),
-            pair.to_string().chars().nth(4).unwrap(),
-            pair.to_string().chars().nth(5).unwrap()
-    );
-            
-
-        println!("Trying: {}", url);
-
-
-        let (socket, __) = tokio_tungstenite::connect_async(&url)
-            .await
-            .expect("Failed to connect");
-
-        let (read, write) = socket.split();
-
-        //let ws_to_stdout = {
-            //read.for_each()(|message| async {
-                //let data = message.unwrap().into_data();
-                //tokio::io::stdout().write_all(&data).await.unwrap()
-            //};)
+        println!("Please choose a trading pair");
+        let pair = get_input().to_ascii_uppercase();
+        pairs.push(pair);
+        println!("Would you like to add another trading pair?Y/n");
+        let resp = get_input();
+        if resp.to_ascii_lowercase() == "n" {
+            running = true;
         }
+    }
+
+    let url = format!("wss://stream.binance.us:9443/ws/{}{}@bookTicker", coin, pairs[0].to_ascii_lowercase());
 
 
-    let mut counter = 0;    
-    };
+    let (mut socket, _response) = tungstenite::connect(Url::parse(&url)
+        .unwrap())
+        .expect("can't connect!");
+
+
+    println!("HTTP STATUS {}", _response.status());
+  
+
+    println!("Trying: {}", url);
+
+    let mut counter = 0;
+
+
+     loop {
+        let msg = 
+            socket.read_message().expect("error reading message");
+
+            let json = 
+                serde_json::Value::from_str(&msg.to_string()).expect("failed to parse message");
+            println!("Message # {:?}", counter);
+            counter += 1;
+            let ask_price = match json["a"].to_string().replace("\"", "").parse::<f32>() {
+                Ok(n) => n,
+                __=> continue 
+            };
+            let ask_qty = match json["A"].to_string().replace("\"", "").parse::<f32>() {
+                Ok(n) => n,
+                __=> continue
+            };
+            println!("Ask price/qty {:?}/{:?}", ask_price, ask_qty);
+            let bid_price = match json["b"].to_string().replace("\"", "").parse::<f32>() {
+                Ok(n) => n,
+                __ => continue
+            };
+            let bid_qty = match json["B"].to_string().replace("\"", "").parse::<f32>() {
+                Ok(n) => n,
+                __ => continue
+            };
+            println!("Bid price/qty {:?}/{:?}", bid_price, bid_qty);
+            binance_us_api::arbitrage(api_key, secret, &coin.to_ascii_uppercase(), pairs.clone(), spread).await;
+            
+        }
 }
+
 
 pub async fn DCA(api_key: &str, secret: &str) {
     println!("DCA Starting");
