@@ -55,7 +55,7 @@ async fn main() {
     let strategies: [&str; 5] = [
         "scheduled_arb", 
         "listen and react", 
-        "triangle arb(not yet working)",
+        "triangle arb(WARNING UNDER CONSTRUCTION: ONLY TAKES PROFIT IN USDT)",
         "DCA (Dollar Cost Averaging)",
          "quit"];
 
